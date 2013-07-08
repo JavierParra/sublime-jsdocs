@@ -9,6 +9,7 @@ import re
 import datetime
 import time
 from functools import reduce
+from string import Template
 
 
 def read_line(view, point):
@@ -481,7 +482,6 @@ class JsdocsParser(object):
                     # ignore everything before the function opener
                     line = line[opener.start():]
 
-
             definition += line
             openBrackets = reduce(countBrackets, re.findall('[()]', line), openBrackets)
             if openBrackets == 0:
@@ -579,6 +579,16 @@ class JsdocsPHP(JsdocsParser):
             'function': "function"
         }
 
+    def parse(self, line):
+        out = super(JsdocsPHP, self).parse(line)
+        if (out):
+            return out
+        out = self.parseClass(line)
+        if (out):
+            return self.formatClass(*out)
+
+        return None
+
     def parseFunction(self, line):
         res = re.search(
             'function\\s+&?(?:\\s+)?'
@@ -592,6 +602,74 @@ class JsdocsPHP(JsdocsParser):
             return None
 
         return (res.group('name'), res.group('args'), None)
+
+    def parseClass(self, line):
+        res = re.search(
+            '[(class)(interface)]\\s+&?\\s*'
+            + '(?P<name>' + self.settings['fnIdentifier'] + ')'
+            + '(?:\\s+extends\\s+[a-zA-Z0-9_]+)?'
+            + '(?:\\s+implements\\s+[a-zA-Z0-9_,\\s+]+)?'
+            + '\\s*{',
+            line
+        )
+
+        if not res:
+            return None
+
+        return (res.group('name'), None)
+
+    def formatClass(self, name, options={}):
+        out = []
+
+        description = self.getNameOverride() or ('[%s description]' % escape(name))
+        out.append("${1:%s}" % description)
+
+        notations = self.getMatchingNotations(name)
+
+        if len(notations):
+            self.parseNotationMap(name, notations[0], out)
+
+        author = self.viewSettings.get('jsdocs_author')
+        if(author):
+            out.append('@author %s' % escape(author))
+
+        return out
+
+    def parseNotationMap(self, name, rule, out):
+        if('package' in rule):
+            package = None
+            if('regex' in rule):
+                package = self.findPackage(name, rule['regex'], rule['package'])
+            else:
+                package = escape(rule['package'])
+
+            if not package:
+                package = "${1:%s}" % escape(rule['package'])
+
+            out.append("@package %s" % package)
+
+        if('subpackage' in rule):
+            subpackage = None
+            if('regex' in rule):
+                subpackage = self.findPackage(name, rule['regex'], rule['subpackage'])
+            else:
+                subpackage = escape(rule['subpackage'])
+
+            if subpackage is not None and subpackage != 'None':
+                out.append("@subpackage %s" % subpackage)
+
+        return None
+
+    def findPackage(self, name, reg, template):
+        default = None
+        res = re.search(reg, name)
+
+        if not res or not res.groupdict():
+            return default
+
+        temp = Template(template)
+
+        return escape(temp.safe_substitute(res.groupdict()))
 
     def getArgType(self, arg):
         #  function add($x, $y = 1)

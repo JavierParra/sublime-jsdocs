@@ -111,6 +111,39 @@ The notation map can also be used to add arbitrary tags, according to your own c
 }
 ```
 
+###Class Documentation in PHP###
+
+In php if the line following your docblock contains a class or interface declaration, DocBlockr can populate the `@author` tag for you with the `jsdocs_author` setting *(in `Base File.sublime-settings`)*. DocBlockr can also parse the class name and populate the package and subpackage tags according to rules defined by you in the `jsdocs_notation_map` setting.
+
+You can add a "TestSuite" package to any class that starts with `test` like so:
+
+```javascript
+{
+    "prefix": "test",
+    "package": "TestSuite"
+}
+```
+
+However you can also use regular expressions with named groups for a more powerful alternative:
+
+```javascript
+{
+    "regex": "(?P<pkg>[a-zA-Z0-9]+)_(?:(?P<sub>[a-zA-Z0-9]+)_)?.*",
+    "package": "$pkg",
+    "subpackage": "$sub"
+}
+```
+
+For a class named "store_mapper_Product" DocBlockr will generate the following DocBlock:
+
+```
+    /**
+     * [store_mapper_Product description]
+     * @package    store
+     * @subpackage mapper
+     */
+```
+
 ### Comment extension ###
 
 Pressing enter inside a docblock will automatically insert a leading asterisk and maintain your indentation.
