@@ -607,8 +607,8 @@ class JsdocsPHP(JsdocsParser):
         res = re.search(
             '[(class)(interface)]\\s+&?\\s*'
             + '(?P<name>' + self.settings['fnIdentifier'] + ')'
-            + '(?:\\s+extends\\s+[a-zA-Z0-9_]+)?'
-            + '(?:\\s+implements\\s+[a-zA-Z0-9_,\\s+]+)?'
+            + '(?:\\s+extends\\s+[\\a-zA-Z0-9_]*[a-zA-Z0-9_])?'
+            + '(?:\\s+implements\\s+[\\a-zA-Z0-9_,\\s+]+)?'
             + '\\s*{',
             line
         )
